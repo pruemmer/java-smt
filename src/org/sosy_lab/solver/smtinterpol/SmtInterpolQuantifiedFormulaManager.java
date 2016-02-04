@@ -50,7 +50,7 @@ class SmtInterpolQuantifiedFormulaManager extends AbstractQuantifiedFormulaManag
 
     @Override
     protected Term eliminateQuantifiers(Term pExtractInfo) throws SolverException, InterruptedException {
-        throw new IllegalArgumentException("Implement eliminateQuantifiers");
+        throw new UnsupportedOperationException("Implement eliminateQuantifiers");
     }
 
     @Override

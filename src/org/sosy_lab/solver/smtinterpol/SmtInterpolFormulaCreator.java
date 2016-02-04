@@ -26,17 +26,20 @@ import com.google.common.base.Function;
 import de.uni_freiburg.informatik.ultimate.logic.ApplicationTerm;
 import de.uni_freiburg.informatik.ultimate.logic.ConstantTerm;
 import de.uni_freiburg.informatik.ultimate.logic.FunctionSymbol;
+import de.uni_freiburg.informatik.ultimate.logic.QuantifiedFormula;
 import de.uni_freiburg.informatik.ultimate.logic.Rational;
 import de.uni_freiburg.informatik.ultimate.logic.Sort;
 import de.uni_freiburg.informatik.ultimate.logic.Term;
 import de.uni_freiburg.informatik.ultimate.logic.Theory;
 
 import org.sosy_lab.solver.api.ArrayFormula;
+import org.sosy_lab.solver.api.BooleanFormula;
 import org.sosy_lab.solver.api.Formula;
 import org.sosy_lab.solver.api.FormulaType;
 import org.sosy_lab.solver.api.FormulaType.ArrayFormulaType;
 import org.sosy_lab.solver.api.FunctionDeclaration;
 import org.sosy_lab.solver.api.FunctionDeclarationKind;
+import org.sosy_lab.solver.api.QuantifiedFormulaManager;
 import org.sosy_lab.solver.basicimpl.FormulaCreator;
 import org.sosy_lab.solver.basicimpl.ObjectArrayBackedList;
 import org.sosy_lab.solver.visitors.FormulaVisitor;
@@ -192,8 +195,14 @@ class SmtInterpolFormulaCreator extends FormulaCreator<Term, Sort, SmtInterpolEn
             f, args, FunctionDeclaration.of(name, getDeclarationKind(app)), constructor);
       }
 
+    } else if (input instanceof QuantifiedFormula) {
+      BooleanFormula formula = null;
+      QuantifiedFormulaManager.Quantifier quantifier = null;
+      List<Formula> boundVariables = null;
+      BooleanFormula body = null;
+      return visitor.visitQuantifier(formula, quantifier, boundVariables, body);
     } else {
-      // TODO: support for quantifiers and bound variables
+      // TODO: support for bound variables
 
       throw new UnsupportedOperationException(
           String.format(

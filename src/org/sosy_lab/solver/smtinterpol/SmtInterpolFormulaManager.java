@@ -57,6 +57,7 @@ class SmtInterpolFormulaManager extends AbstractFormulaManager<Term, Sort, SmtIn
       SmtInterpolBooleanFormulaManager pBooleanManager,
       SmtInterpolIntegerFormulaManager pIntegerManager,
       SmtInterpolRationalFormulaManager pRationalManager,
+      SmtInterpolQuantifiedFormulaManager pQuantifiedManager,
       SmtInterpolArrayFormulaManager pArrayFormulaManager) {
     super(
         pCreator,
@@ -66,7 +67,7 @@ class SmtInterpolFormulaManager extends AbstractFormulaManager<Term, Sort, SmtIn
         pRationalManager,
         null,
         null,
-        null,
+        pQuantifiedManager,
         pArrayFormulaManager);
   }
 

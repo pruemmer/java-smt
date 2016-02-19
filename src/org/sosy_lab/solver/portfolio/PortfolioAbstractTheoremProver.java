@@ -28,19 +28,28 @@ import org.sosy_lab.solver.api.FormulaType;
 import org.sosy_lab.solver.api.Model;
 import org.sosy_lab.solver.basicimpl.AbstractModel;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public abstract class PortfolioAbstractTheoremProver<T, PE extends BasicProverEnvironment<?>>
     implements BasicProverEnvironment<T> {
 
   protected final List<PE> delegates;
   protected final PortfolioFormulaCreator creator;
+  private final ShutdownNotifier shutdownNotifier;
 
   public PortfolioAbstractTheoremProver(
       PortfolioFormulaCreator pCreator, ShutdownNotifier pShutdownNotifier, List<PE> pDelegates) {
     delegates = pDelegates;
     creator = pCreator;
+    shutdownNotifier = pShutdownNotifier;
   }
 
   @Override
@@ -65,15 +74,76 @@ public abstract class PortfolioAbstractTheoremProver<T, PE extends BasicProverEn
 
   @Override
   public boolean isUnsat() throws SolverException, InterruptedException {
-    // TODO parallel loop!
+    // Boolean isUnsat = sequentialIsUnsat();
+    Boolean isUnsat = parallelIsUnsat();
+    assert isUnsat != null;
+    return isUnsat;
+  }
+
+  @SuppressWarnings("unused")
+  private Boolean sequentialIsUnsat() throws SolverException, InterruptedException {
     Boolean isUnsat = null;
     for (BasicProverEnvironment<?> delegate : delegates) {
       boolean tmp = delegate.isUnsat();
       assert isUnsat == null || tmp == isUnsat;
       isUnsat = tmp;
     }
-    assert isUnsat != null;
     return isUnsat;
+  }
+
+  /**
+   * We run all solvers in parallel and use the first result.
+   * The remaining solvers are killed.
+   * We expect that all solvers would return the same result SAT/UNSAT.
+   */
+  private Boolean parallelIsUnsat() throws InterruptedException {
+    Boolean isUnsat = null;
+    CompletionService<Boolean> service =
+        new ExecutorCompletionService<>(Executors.newCachedThreadPool());
+    List<Future<Boolean>> futures = new ArrayList<>();
+    try {
+      // create some workers
+      for (PE delegate : delegates) {
+        futures.add(service.submit(new UnsatCaller(delegate)));
+      }
+      // wait for the first worker, we only want one result (except Null or Exception)
+      for (int i = 0; i < delegates.size(); i++) {
+        try {
+          Boolean tmp = service.take().get();
+          if (tmp != null) {
+            isUnsat = tmp;
+            // the first result is good enough, abort further steps
+            break;
+          }
+        } catch (ExecutionException ignore) {
+          // TODO should we log this?
+        }
+      }
+      shutdownNotifier.shutdownIfNecessary();
+    } finally {
+      // kill all other threads
+      // TODO let them run in background until finished,
+      //      this is a waste of resources, but faster due missing kill-overhead.
+      for (Future<Boolean> f : futures) {
+        f.cancel(true);
+      }
+    }
+    return isUnsat;
+  }
+
+  /** This class is just a wrapper to call isUnsat() in another thread. */
+  private class UnsatCaller implements Callable<Boolean> {
+
+    private final PE delegate;
+
+    private UnsatCaller(PE pDelegate) {
+      delegate = pDelegate;
+    }
+
+    @Override
+    public Boolean call() throws Exception {
+      return delegate.isUnsat();
+    }
   }
 
   @Override

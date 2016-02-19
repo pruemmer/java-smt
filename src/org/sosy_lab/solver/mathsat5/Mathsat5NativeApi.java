@@ -24,6 +24,7 @@
 package org.sosy_lab.solver.mathsat5;
 
 import com.google.common.base.Strings;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nullable;
@@ -706,6 +707,7 @@ class Mathsat5NativeApi {
    * @param lower The string representing the value of an initial lower bound.
    * @param upper The string representing the value of an initial upper bound.
    */
+  @CanIgnoreReturnValue
   public static native long msat_push_minimize(
       long e, long term, @Nullable String lower, @Nullable String upper);
 
@@ -718,6 +720,7 @@ class Mathsat5NativeApi {
    * @param lower The string representing the value of an initial lower bound.
    * @param upper The string representing the value of an initial upper bound.
    */
+  @CanIgnoreReturnValue
   public static native long msat_push_maximize(
       long e, long term, @Nullable String lower, @Nullable String upper);
 
@@ -731,6 +734,7 @@ class Mathsat5NativeApi {
    * @param lower The string representing the value of an initial lower bound.
    * @param upper The string representing the value of an initial upper bound.
    */
+  @CanIgnoreReturnValue
   public static native long msat_push_minmax(
       long e, int len, long[] terms, @Nullable String lower, @Nullable String upper);
 
@@ -744,6 +748,7 @@ class Mathsat5NativeApi {
    * @param lower The string representing the value of an initial lower bound.
    * @param upper The string representing the value of an initial upper bound.
    */
+  @CanIgnoreReturnValue
   public static native long msat_push_maxmin(
       long e, int len, long[] terms, @Nullable String lower, @Nullable String upper);
 
@@ -897,4 +902,20 @@ class Mathsat5NativeApi {
    *         The string must be deallocated by the user with ::msat_free().
    */
   public static native String msat_objective_value_repr(long e, long o, int i);
+
+  /**
+   * Performs garbage collection on the given environment
+   *
+   * <p>This function will perform garbage collection on the given environment.
+   * All the internal caches of the environment will be cleared (including those
+   * in the active solvers and preprocessors). If the environment is not shared,
+   * all the terms that are not either in {@code tokeep} or in the current asserted
+   * formulas will be deleted.
+   *
+   * @param env msat_env The environment in which to operate.
+   * @param tokeep List of terms to not delete.
+   * @param num_tokeep Size of the {@code tokeep} array.
+   * @return zero on success, nonzero on error.
+   */
+  private static native int msat_gc_env(long env, long[] tokeep, int num_tokeep);
 }

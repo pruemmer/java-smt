@@ -61,12 +61,14 @@ public class OptimizationTest extends SolverBasedTest0 {
           ImmutableList.of(rmgr.greaterOrEquals(x, rmgr.makeNumber("10")), rmgr.equal(x, obj));
       prover.addConstraint(bmgr.and(constraints));
       int handle = prover.maximize(obj);
-      prover.check();
+      OptStatus response = prover.check();
+      assertThat(response).isEqualTo(OptStatus.OPT);
       assertThat(prover.upper(handle, Rational.ZERO)).isAbsent();
     }
   }
 
   @Test
+  @SuppressWarnings("CheckReturnValue")
   public void testUnfeasible() throws Exception {
     requireRationals();
     try (OptimizationProverEnvironment prover = context.newOptimizationProverEnvironment()) {

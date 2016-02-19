@@ -78,13 +78,4 @@ public class PortfolioOptimizationProverEnvironment
     // TODO Auto-generated method stub
     return null;
   }
-
-  @Override
-  public String dump() {
-    StringBuilder str = new StringBuilder("[");
-    for (OptimizationProverEnvironment delegate : delegates) {
-      str.append(delegate.dump()).append(", ");
-    }
-    return str.append("]").toString();
-  }
 }

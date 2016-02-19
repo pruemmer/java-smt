@@ -19,7 +19,6 @@
  */
 package org.sosy_lab.solver.z3;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static org.sosy_lab.solver.z3.Z3NativeApi.ast_to_string;
 import static org.sosy_lab.solver.z3.Z3NativeApi.get_numeral_string;
 import static org.sosy_lab.solver.z3.Z3NativeApi.mk_optimize;
@@ -69,19 +68,17 @@ class Z3OptimizationProver extends Z3AbstractProver<Void> implements Optimizatio
   private final LogManager logger;
   private static final String Z3_INFINITY_REPRESENTATION = "oo";
   private final long z3optContext;
-  private final ShutdownNotifier shutdownNotifier;
 
   Z3OptimizationProver(
       FormulaManager mgr,
       Z3FormulaCreator creator,
       ShutdownNotifier pShutdownNotifier,
       LogManager pLogger) {
-    super(creator);
+    super(creator, pShutdownNotifier);
     this.mgr = mgr;
     rfmgr = mgr.getRationalFormulaManager();
     z3optContext = mk_optimize(z3context);
     optimize_inc_ref(z3context, z3optContext);
-    shutdownNotifier = checkNotNull(pShutdownNotifier);
     logger = pLogger;
   }
 
@@ -182,16 +179,6 @@ class Z3OptimizationProver extends Z3AbstractProver<Void> implements Optimizatio
     optimize_set_params(z3context, z3optContext, params);
   }
 
-  /**
-   * Dumps the optimized objectives and the constraints on the solver in the
-   * SMT-lib format. Super-useful!
-   */
-  @Override
-  public String toString() {
-    Preconditions.checkState(!closed);
-    return optimize_to_string(z3context, z3optContext);
-  }
-
   @Override
   public void close() {
     Preconditions.checkState(!closed);
@@ -222,8 +209,12 @@ class Z3OptimizationProver extends Z3AbstractProver<Void> implements Optimizatio
     return Rational.ofString(get_numeral_string(z3context, ast));
   }
 
+  /**
+   * Dumps the optimized objectives and the constraints on the solver in the
+   * SMT-lib format. Super-useful!
+   */
   @Override
-  public String dump() {
+  public String toString() {
     Preconditions.checkState(!closed);
     return optimize_to_string(z3context, z3optContext);
   }

@@ -53,7 +53,7 @@
 
     <dependencies>
         <!-- SoSy-Lab Common Library -->
-        <dependency org="org.sosy_lab" name="common" rev="0.1000-34-g86eacf3" conf="core->runtime; contrib->sources"/>
+        <dependency org="org.sosy_lab" name="common" rev="0.1000-39-gb5673bc" conf="core->runtime; contrib->sources"/>
 
         <!-- Google Core Libraries for Java
              Contains a lot of helpful data structures. -->
@@ -105,14 +105,14 @@
         </dependency>
 
         <!-- Princess -->
-        <dependency org="org.ruemmer.philipp" name="princess" rev="2015-12-08-r2563" conf="runtime-princess->runtime; contrib->sources">
+        <dependency org="org.ruemmer.philipp" name="princess" rev="2016-02-10-r2566" conf="runtime-princess->runtime; contrib->sources">
           <artifact name="princess" e:classifier="assertionless" conf="runtime-princess"/>
           <artifact name="princess" e:classifier="sources-assertionless" conf="contrib" ext="zip"/>
         </dependency>
 
         <!-- Solver Binaries -->
-        <dependency org="org.sosy_lab" name="javasmt-solver-z3" rev="z3-4.4.1-750-ge829147" conf="runtime-z3->solver-z3" />
-        <dependency org="org.sosy_lab" name="javasmt-solver-mathsat" rev="5.3.10" conf="runtime-mathsat->solver-mathsat" />
+        <dependency org="org.sosy_lab" name="javasmt-solver-z3" rev="z3-4.4.1-788-g8df145d" conf="runtime-z3->solver-z3" />
+        <dependency org="org.sosy_lab" name="javasmt-solver-mathsat" rev="5.3.10.1" conf="runtime-mathsat->solver-mathsat" />
         <dependency org="org.sosy_lab" name="javasmt-solver-optimathsat" rev="1.3.10" conf="runtime-optimathsat->solver-optimathsat" />
 
         <!-- Google Auto-Value

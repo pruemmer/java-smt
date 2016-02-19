@@ -32,7 +32,7 @@ import java.util.logging.Level;
 
 import javax.annotation.Nullable;
 
-@Options(prefix = "solver.z3", deprecatedPrefix = "cpa.predicate.solver.z3")
+@Options(prefix = "solver.z3java")
 public final class Z3SolverContext extends AbstractSolverContext {
 
   /** Optimization settings */
@@ -60,7 +60,7 @@ public final class Z3SolverContext extends AbstractSolverContext {
   private static final String OPT_ENGINE_CONFIG_KEY = "optsmt_engine";
   private static final String OPT_PRIORITY_CONFIG_KEY = "priority";
 
-  @Options(prefix = "solver.z3")
+  @Options(prefix = "solver.z3java")
   private static class ExtraOptions {
     @Option(secure = true, description = "Require proofs from SMT solver")
     boolean requireProofs = true;
@@ -112,7 +112,7 @@ public final class Z3SolverContext extends AbstractSolverContext {
       logger.log(
           Level.WARNING,
           "Z3 does not support dumping a log file in SMTLIB format. "
-              + "Please use the option solver.z3.log for a Z3-specific log instead.");
+              + "Please use the option solver.z3java.log for a Z3-specific log instead.");
     }
 
     if (NativeLibraries.OS.guessOperatingSystem() == NativeLibraries.OS.WINDOWS) {
@@ -162,8 +162,7 @@ public final class Z3SolverContext extends AbstractSolverContext {
     Params z3params = context.mkParams();
     z3params.add(":random-seed", (int) randomSeed);
 
-    Z3FormulaCreator creator =
-        new Z3FormulaCreator(context, boolSort, integerSort, realSort, config);
+    Z3FormulaCreator creator = new Z3FormulaCreator(context, boolSort, integerSort, realSort);
 
     // Create managers
     Z3FunctionFormulaManager functionTheory = new Z3FunctionFormulaManager(creator);
@@ -200,7 +199,7 @@ public final class Z3SolverContext extends AbstractSolverContext {
 
   @Override
   public InterpolatingProverEnvironment<?> newProverEnvironmentWithInterpolation0() {
-    return new Z3InterpolatingProver(creator, z3params);
+    return new Z3InterpolatingProver(creator, z3params, shutdownNotifier);
   }
 
   @Override

@@ -20,8 +20,8 @@
 package org.sosy_lab.solver.z3;
 
 import static org.sosy_lab.solver.z3.Z3NativeApi.ast_vector_get;
-import static org.sosy_lab.solver.z3.Z3NativeApi.compute_interpolant;
 import static org.sosy_lab.solver.z3.Z3NativeApi.dec_ref;
+import static org.sosy_lab.solver.z3.Z3NativeApi.get_interpolant;
 import static org.sosy_lab.solver.z3.Z3NativeApi.inc_ref;
 import static org.sosy_lab.solver.z3.Z3NativeApi.mk_and;
 import static org.sosy_lab.solver.z3.Z3NativeApi.mk_interpolant;
@@ -32,6 +32,7 @@ import static org.sosy_lab.solver.z3.Z3NativeApi.solver_check;
 import static org.sosy_lab.solver.z3.Z3NativeApi.solver_dec_ref;
 import static org.sosy_lab.solver.z3.Z3NativeApi.solver_get_model;
 import static org.sosy_lab.solver.z3.Z3NativeApi.solver_get_num_scopes;
+import static org.sosy_lab.solver.z3.Z3NativeApi.solver_get_proof;
 import static org.sosy_lab.solver.z3.Z3NativeApi.solver_inc_ref;
 import static org.sosy_lab.solver.z3.Z3NativeApi.solver_pop;
 import static org.sosy_lab.solver.z3.Z3NativeApi.solver_push;
@@ -44,9 +45,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Longs;
 
+import org.sosy_lab.common.ShutdownNotifier;
 import org.sosy_lab.solver.api.BooleanFormula;
 import org.sosy_lab.solver.api.InterpolatingProverEnvironment;
-import org.sosy_lab.solver.z3.Z3NativeApi.PointerToLong;
 import org.sosy_lab.solver.z3.Z3NativeApiConstants.Z3_LBOOL;
 
 import java.util.ArrayDeque;
@@ -63,8 +64,9 @@ class Z3InterpolatingProver extends Z3AbstractProver<Long>
   private int level = 0;
   private final Deque<Long> assertedFormulas = new ArrayDeque<>();
 
-  Z3InterpolatingProver(Z3FormulaCreator creator, long z3params) {
-    super(creator);
+  Z3InterpolatingProver(
+      Z3FormulaCreator creator, long z3params, ShutdownNotifier pShutdownNotifier) {
+    super(creator, pShutdownNotifier);
     this.z3solver = mk_solver(z3context);
     solver_inc_ref(z3context, z3solver);
     solver_set_params(z3context, z3solver, z3params);
@@ -99,17 +101,17 @@ class Z3InterpolatingProver extends Z3AbstractProver<Long>
   }
 
   @Override
-  public boolean isUnsat() throws Z3SolverException {
+  public boolean isUnsat() throws Z3SolverException, InterruptedException {
     Preconditions.checkState(!closed);
     int result = solver_check(z3context, z3solver);
-
+    shutdownNotifier.shutdownIfNecessary();
     Preconditions.checkState(result != Z3_LBOOL.Z3_L_UNDEF.status);
     return result == Z3_LBOOL.Z3_L_FALSE.status;
   }
 
   @Override
   @SuppressWarnings({"unchecked", "varargs"})
-  public BooleanFormula getInterpolant(final List<Long> formulasOfA) {
+  public BooleanFormula getInterpolant(final List<Long> formulasOfA) throws InterruptedException {
     Preconditions.checkState(!closed);
 
     // calc difference: formulasOfB := assertedFormulas - formulasOfA
@@ -129,7 +131,8 @@ class Z3InterpolatingProver extends Z3AbstractProver<Long>
   }
 
   @Override
-  public List<BooleanFormula> getSeqInterpolants(List<Set<Long>> partitionedFormulas) {
+  public List<BooleanFormula> getSeqInterpolants(List<Set<Long>> partitionedFormulas)
+      throws InterruptedException {
     Preconditions.checkState(!closed);
     Preconditions.checkArgument(
         partitionedFormulas.size() >= 2, "at least 2 partitions needed for interpolation");
@@ -140,7 +143,7 @@ class Z3InterpolatingProver extends Z3AbstractProver<Long>
 
   @Override
   public List<BooleanFormula> getTreeInterpolants(
-      List<Set<Long>> partitionedFormulas, int[] startOfSubTree) {
+      List<Set<Long>> partitionedFormulas, int[] startOfSubTree) throws InterruptedException {
     Preconditions.checkState(!closed);
     final long[] conjunctionFormulas = new long[partitionedFormulas.size()];
 
@@ -197,30 +200,28 @@ class Z3InterpolatingProver extends Z3AbstractProver<Long>
     Preconditions.checkState(
         stack.isEmpty(), "root should have been the last element in the stack.");
 
-    final PointerToLong model = new PointerToLong();
-    final PointerToLong interpolant = new PointerToLong();
-    int isSat =
-        compute_interpolant(
-            z3context,
-            root, // last element is end of chain (root of tree)
-            mk_params(z3context),
-            interpolant,
-            model);
+    final long proof = solver_get_proof(z3context, z3solver);
+    inc_ref(z3context, proof);
 
-    Preconditions.checkState(
-        isSat == Z3_LBOOL.Z3_L_FALSE.status,
-        "interpolation not possible, because SAT-check returned status '%s'",
-        isSat);
+    long interpolationResult =
+        get_interpolant(
+            z3context,
+            proof, //refutation of premises := proof
+            root, // last element is end of chain (root of tree), pattern := interpolation tree
+            mk_params(z3context));
+
+    shutdownNotifier.shutdownIfNecessary();
 
     // n partitions -> n-1 interpolants
     // the given tree interpolants are sorted in post-order,
     // so we only need to copy them
     final List<BooleanFormula> result = new ArrayList<>();
     for (int i = 0; i < partitionedFormulas.size() - 1; i++) {
-      result.add(creator.encapsulateBoolean(ast_vector_get(z3context, interpolant.value, i)));
+      result.add(creator.encapsulateBoolean(ast_vector_get(z3context, interpolationResult, i)));
     }
 
     // cleanup
+    dec_ref(z3context, proof);
     for (long partition : conjunctionFormulas) {
       dec_ref(z3context, partition);
     }

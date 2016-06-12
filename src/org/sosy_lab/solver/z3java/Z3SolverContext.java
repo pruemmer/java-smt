@@ -145,7 +145,7 @@ public final class Z3SolverContext extends AbstractSolverContext {
 
     // TODO do we always need interpolation? how much overhead?
     // final Context context = new Context(cfg);
-    final Context context = new InterpolationContext(cfg);
+    final Context context = InterpolationContext.mkContext(cfg);
 
     ShutdownNotifier.ShutdownRequestListener interruptListener = reason -> context.interrupt();
 

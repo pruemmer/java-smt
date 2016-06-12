@@ -101,7 +101,5 @@ class Z3Model extends AbstractModel<Expr, Sort, Context> {
   }
 
   @Override
-  public void close() {
-    model.dispose();
-  }
+  public void close() { }
 }

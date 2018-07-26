@@ -21,30 +21,12 @@ package org.sosy_lab.java_smt.solvers.princess;
 
 import ap.parser.IExpression;
 import ap.types.Sort;
-import java.util.List;
 import org.sosy_lab.java_smt.basicimpl.AbstractUFManager;
-import org.sosy_lab.java_smt.solvers.princess.PrincessFunctionDeclaration.PrincessIFunctionDeclaration;
 
 class PrincessUFManager
     extends AbstractUFManager<IExpression, PrincessFunctionDeclaration, Sort, PrincessEnvironment> {
 
-  private final PrincessFormulaCreator creator;
-
   PrincessUFManager(PrincessFormulaCreator creator) {
     super(creator);
-    this.creator = creator;
-  }
-
-  @Override
-  protected IExpression createUninterpretedFunctionCallImpl(
-      PrincessFunctionDeclaration pFuncDecl, List<IExpression> pArgs) {
-    return creator.makeFunction(pFuncDecl, pArgs);
-  }
-
-  @Override
-  protected PrincessFunctionDeclaration declareUninterpretedFunctionImpl(
-      String pName, Sort pReturnType, List<Sort> args) {
-    return new PrincessIFunctionDeclaration(
-        getFormulaCreator().getEnv().declareFun(pName, pReturnType, args));
   }
 }

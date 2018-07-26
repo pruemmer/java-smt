@@ -73,6 +73,7 @@ import static org.sosy_lab.java_smt.solvers.mathsat5.Mathsat5NativeApi.msat_get_
 import static org.sosy_lab.java_smt.solvers.mathsat5.Mathsat5NativeApi.msat_get_fp_type;
 import static org.sosy_lab.java_smt.solvers.mathsat5.Mathsat5NativeApi.msat_get_fp_type_exp_width;
 import static org.sosy_lab.java_smt.solvers.mathsat5.Mathsat5NativeApi.msat_get_fp_type_mant_width;
+import static org.sosy_lab.java_smt.solvers.mathsat5.Mathsat5NativeApi.msat_get_function_type;
 import static org.sosy_lab.java_smt.solvers.mathsat5.Mathsat5NativeApi.msat_get_integer_type;
 import static org.sosy_lab.java_smt.solvers.mathsat5.Mathsat5NativeApi.msat_get_rational_type;
 import static org.sosy_lab.java_smt.solvers.mathsat5.Mathsat5NativeApi.msat_is_array_type;
@@ -299,6 +300,12 @@ class Mathsat5FormulaCreator extends FormulaCreator<Long, Long, Long, Long> {
       return visitor.visitFreeVariable(formula, msat_term_repr(f));
     } else {
 
+      final String name = msat_decl_get_name(msat_term_get_decl(f));
+      if (arity == 0 && name.startsWith("'")) {
+        // symbols starting with "'" are missed as constants, but seen as functions of type OTHER
+        return visitor.visitFreeVariable(formula, name);
+      }
+
       ImmutableList.Builder<Formula> args = ImmutableList.builder();
       ImmutableList.Builder<FormulaType<?>> argTypes = ImmutableList.builder();
       for (int i = 0; i < arity; i++) {
@@ -308,7 +315,6 @@ class Mathsat5FormulaCreator extends FormulaCreator<Long, Long, Long, Long> {
         argTypes.add(argumentType);
       }
 
-      String name = msat_decl_get_name(msat_term_get_decl(f));
       return visitor.visitFunction(
           formula,
           args.build(),
@@ -499,8 +505,16 @@ class Mathsat5FormulaCreator extends FormulaCreator<Long, Long, Long, Long> {
   }
 
   @Override
-  public Long callFunctionImpl(FunctionDeclarationImpl<?, Long> declaration, List<Long> args) {
-    return msat_make_term(environment, declaration.getSolverDeclaration(), Longs.toArray(args));
+  public Long declareUFImpl(String pName, Long returnType, List<Long> pArgTypes) {
+    long[] types = Longs.toArray(pArgTypes);
+    long msatFuncType = msat_get_function_type(environment, types, types.length, returnType);
+    long decl = msat_declare_function(environment, pName, msatFuncType);
+    return decl;
+  }
+
+  @Override
+  public Long callFunctionImpl(Long declaration, List<Long> args) {
+    return msat_make_term(environment, declaration, Longs.toArray(args));
   }
 
   @Override

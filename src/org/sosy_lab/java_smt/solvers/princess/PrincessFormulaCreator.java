@@ -412,16 +412,16 @@ class PrincessFormulaCreator
     return (t instanceof IBinFormula) && val.equals(((IBinFormula) t).j()); // j is the operator
   }
 
-  public IExpression makeFunction(PrincessFunctionDeclaration pFuncDecl, List<IExpression> args) {
-    System.out.println(pFuncDecl);
-    System.out.println(args);
-    return pFuncDecl.makeApp(getEnv(), args);
+  @Override
+  public PrincessFunctionDeclaration declareUFImpl(
+      String pName, Sort pReturnType, List<Sort> args) {
+    return new PrincessIFunctionDeclaration(environment.declareFun(pName, pReturnType, args));
   }
 
   @Override
   public IExpression callFunctionImpl(
-      FunctionDeclarationImpl<?, PrincessFunctionDeclaration> declaration, List<IExpression> args) {
-    return makeFunction(declaration.getSolverDeclaration(), args);
+      PrincessFunctionDeclaration declaration, List<IExpression> args) {
+    return declaration.makeApp(environment, args);
   }
 
   @Override

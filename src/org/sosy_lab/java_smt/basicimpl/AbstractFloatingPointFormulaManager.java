@@ -19,6 +19,8 @@
  */
 package org.sosy_lab.java_smt.basicimpl;
 
+import static org.sosy_lab.java_smt.basicimpl.AbstractFormulaManager.checkVariableName;
+
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;

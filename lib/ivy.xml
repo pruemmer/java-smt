@@ -58,11 +58,11 @@
 
     <dependencies>
         <!-- SoSy-Lab Common Library -->
-        <dependency org="org.sosy_lab" name="common" rev="0.3000-229-g055f2fd" conf="core->runtime; contrib->sources"/>
+        <dependency org="org.sosy_lab" name="common" rev="0.3000-299-g894eab7" conf="core->runtime; contrib->sources"/>
 
         <!-- Google Core Libraries for Java
              Contains a lot of helpful data structures. -->
-        <dependency org="com.google.guava" name="guava" rev="23.5-jre" conf="core->default; contrib->sources"/>
+        <dependency org="com.google.guava" name="guava" rev="24.1-jre" conf="core->default; contrib->sources"/>
 
         <!--  Guava-testlib contains many useful testing utilities -->
         <dependency org="com.google.guava" name="guava-testlib" rev="23.5-jre" conf="test->default; contrib->sources"/>
@@ -73,7 +73,8 @@
 
         <!-- Google Auto-Value
              Library for auto-generating value types. -->
-        <dependency org="com.google.auto.value" name="auto-value" rev="1.5" conf="build->default"/>
+        <dependency org="com.google.auto.value" name="auto-value" rev="1.6" conf="build->default"/>
+        <dependency org="com.google.auto.value" name="auto-value-annotations" rev="1.6" conf="build->default"/>
 
         <!-- JUnit
              Testing framework. -->
@@ -81,7 +82,7 @@
 
         <!-- JaCoCo
              Library for code coverage -->
-        <dependency org="org.jacoco" name="org.jacoco.ant" rev="0.8.0" conf="build->default"/>
+        <dependency org="org.jacoco" name="org.jacoco.ant" rev="0.8.1" conf="build->default"/>
 
         <!-- The JUnit task for Ant so that we can run the tests.
              The property used here is defined in build.xml according to the current Ant version. -->
@@ -104,7 +105,7 @@
 
         <!-- google-java-format
              A source-code formatter for Java -->
-        <dependency org="com.google.googlejavaformat" name="google-java-format" rev="1.5" conf="format-source->default"/>
+        <dependency org="com.google.googlejavaformat" name="google-java-format" rev="1.6" conf="format-source->default"/>
 
         <!-- Checkstyle -->
         <dependency org="com.github.sevntu-checkstyle" name="sevntu-checks" rev="1.27.0" conf="checkstyle->default"/>
@@ -116,14 +117,19 @@
         <dependency org="com.google.code.findbugs" name="jsr305" rev="3.0.2" conf="runtime->default; contrib->sources"/>
 
         <!-- SmtInterpol -->
-        <dependency org="de.uni-freiburg.informatik.ultimate" name="smtinterpol" rev="2.1-335-g4c543a5" conf="runtime-smtinterpol->master; contrib->sources"/>
+        <dependency org="de.uni-freiburg.informatik.ultimate" name="smtinterpol" rev="2.5-12-g3d15a15c" conf="runtime-smtinterpol->master; contrib->sources"/>
 
         <!-- Princess -->
-        <dependency org="uuverifiers" name="princess_2.12" rev="2018-02-26-assertionless" conf="runtime-princess->default; contrib->sources">
+        <dependency org="uuverifiers" name="princess_2.12" rev="2018-05-25-assertionless" conf="runtime-princess->default; contrib->sources">
+          <!-- Exclude dependency on java-cup and replace it with java-cup-runtime, which is enough.
+               We use the JAR that is published by us instead of the one from net.sf.squirrel-sql.thirdparty-non-maven
+               because the latter does not provide a separate JAR for java-cup-runtime. -->
+          <exclude org="net.sf.squirrel-sql.thirdparty-non-maven" name="java-cup"/>
         </dependency>
+        <dependency org="edu.tum.cs" name="java-cup" rev="11a" conf="runtime->runtime"/>
 
         <!-- Solver Binaries -->
-        <dependency org="org.sosy_lab" name="javasmt-solver-mathsat" rev="5.5.0" conf="runtime-mathsat->solver-mathsat" />
+        <dependency org="org.sosy_lab" name="javasmt-solver-mathsat" rev="5.5.2" conf="runtime-mathsat->solver-mathsat" />
         <dependency org="org.sosy_lab" name="javasmt-solver-z3" rev="z3-4.6.0-9-g36204fa" conf="runtime-z3->solver-z3" />
         <dependency org="org.sosy_lab" name="javasmt-solver-optimathsat" rev="1.4.0.10" conf="runtime-optimathsat->solver-optimathsat" />
 

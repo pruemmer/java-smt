@@ -485,4 +485,24 @@ public class SolverStackTest extends SolverBasedTest0 {
           .isEqualTo(BigInteger.ZERO);
     }
   }
+
+  @Test
+  @SuppressWarnings("resource")
+  public void multiCloseTest() throws SolverException, InterruptedException {
+    BasicProverEnvironment<?> stack = newEnvironmentForTest(ProverOptions.GENERATE_MODELS);
+    try {
+      // do something on the stack
+      stack.push();
+      stack.pop();
+      stack.push(imgr.equal(imgr.makeVariable("a"), imgr.makeNumber(0)));
+      assertThat(stack).isSatisfiable();
+      stack.push();
+
+    } finally {
+      // close the stack several times, closing should be idempotent
+      for (int i = 0; i < 10; i++) {
+        stack.close();
+      }
+    }
+  }
 }

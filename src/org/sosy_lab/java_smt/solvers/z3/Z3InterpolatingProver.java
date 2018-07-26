@@ -230,6 +230,7 @@ class Z3InterpolatingProver extends Z3SolverBasedProver<Long>
       result.add(
           creator.encapsulateBoolean(Native.astVectorGet(z3context, interpolationResult, i)));
     }
+    assert result.size() == startOfSubTree.length - 1;
 
     // cleanup
     Native.decRef(z3context, proof);
@@ -288,7 +289,10 @@ class Z3InterpolatingProver extends Z3SolverBasedProver<Long>
   @Override
   public void close() {
     super.close();
-    Preconditions.checkState(assertedFormulas.size() == 1);
+    Preconditions.checkState(
+        assertedFormulas.size() <= 1,
+        "stack must be empty (if already closed) or "
+            + "contains only the initial level (to be removed)");
     assertedFormulas.clear();
   }
 

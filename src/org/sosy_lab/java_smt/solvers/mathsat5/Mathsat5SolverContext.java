@@ -52,6 +52,7 @@ import org.sosy_lab.java_smt.api.FloatingPointRoundingMode;
 import org.sosy_lab.java_smt.api.InterpolatingProverEnvironment;
 import org.sosy_lab.java_smt.api.OptimizationProverEnvironment;
 import org.sosy_lab.java_smt.api.ProverEnvironment;
+import org.sosy_lab.java_smt.basicimpl.AbstractNumeralFormulaManager.NonLinearArithmetic;
 import org.sosy_lab.java_smt.basicimpl.AbstractSolverContext;
 import org.sosy_lab.java_smt.solvers.mathsat5.Mathsat5NativeApi.TerminationTest;
 
@@ -61,11 +62,10 @@ public final class Mathsat5SolverContext extends AbstractSolverContext {
   private static class Mathsat5Settings {
 
     @Option(
-      secure = true,
-      description =
-          "Further options that will be passed to Mathsat in addition to the default options. "
-              + "Format is 'key1=value1,key2=value2'"
-    )
+        secure = true,
+        description =
+            "Further options that will be passed to Mathsat in addition to the default options. "
+                + "Format is 'key1=value1,key2=value2'")
     private String furtherOptions = "";
 
     @Option(secure = true, description = "Load less stable optimizing version of mathsat5 solver.")
@@ -149,7 +149,8 @@ public final class Mathsat5SolverContext extends AbstractSolverContext {
       ShutdownNotifier pShutdownNotifier,
       @Nullable PathCounterTemplate solverLogFile,
       long randomSeed,
-      FloatingPointRoundingMode pFloatingPointRoundingMode)
+      FloatingPointRoundingMode pFloatingPointRoundingMode,
+      NonLinearArithmetic pNonLinearArithmetic)
       throws InvalidConfigurationException {
 
     // Init Msat
@@ -181,13 +182,14 @@ public final class Mathsat5SolverContext extends AbstractSolverContext {
     // Create managers
     Mathsat5UFManager functionTheory = new Mathsat5UFManager(creator);
     Mathsat5BooleanFormulaManager booleanTheory = new Mathsat5BooleanFormulaManager(creator);
-    Mathsat5IntegerFormulaManager integerTheory = new Mathsat5IntegerFormulaManager(creator);
-    Mathsat5RationalFormulaManager rationalTheory = new Mathsat5RationalFormulaManager(creator);
+    Mathsat5IntegerFormulaManager integerTheory =
+        new Mathsat5IntegerFormulaManager(creator, pNonLinearArithmetic);
+    Mathsat5RationalFormulaManager rationalTheory =
+        new Mathsat5RationalFormulaManager(creator, pNonLinearArithmetic);
     Mathsat5BitvectorFormulaManager bitvectorTheory =
         Mathsat5BitvectorFormulaManager.create(creator);
     Mathsat5FloatingPointFormulaManager floatingPointTheory =
-        new Mathsat5FloatingPointFormulaManager(
-            creator, functionTheory, pFloatingPointRoundingMode);
+        new Mathsat5FloatingPointFormulaManager(creator, pFloatingPointRoundingMode);
     Mathsat5ArrayFormulaManager arrayTheory = new Mathsat5ArrayFormulaManager(creator);
     Mathsat5FormulaManager manager =
         new Mathsat5FormulaManager(

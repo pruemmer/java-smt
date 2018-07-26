@@ -33,6 +33,7 @@ import ap.parser.IExpression;
 import ap.parser.IFormula;
 import ap.parser.IFunApp;
 import ap.parser.IFunction;
+import ap.parser.IIntFormula;
 import ap.parser.ITerm;
 import ap.parser.SMTLineariser;
 import ap.parser.SMTParser2InputAbsy.SMTFunctionType;
@@ -88,11 +89,10 @@ import scala.collection.Seq;
 class PrincessEnvironment {
 
   @Option(
-    secure = true,
-    description =
-        "The number of atoms a term has to have before"
-            + " it gets abbreviated if there are more identical terms."
-  )
+      secure = true,
+      description =
+          "The number of atoms a term has to have before"
+              + " it gets abbreviated if there are more identical terms.")
   private int minAtomsForAbbreviation = 100;
 
   public static final Sort BOOL_SORT = Sort$.MODULE$.Bool();
@@ -239,7 +239,8 @@ class PrincessEnvironment {
   public List<? extends IExpression> parseStringToTerms(String s, PrincessFormulaCreator creator) {
 
     Tuple3<
-            Seq<IFormula>, scala.collection.immutable.Map<IFunction, SMTFunctionType>,
+            Seq<IFormula>,
+            scala.collection.immutable.Map<IFunction, SMTFunctionType>,
             scala.collection.immutable.Map<ConstantTerm, SMTType>>
         triple = api.extractSMTLIBAssertionsSymbols(new StringReader(s));
 
@@ -374,6 +375,8 @@ class PrincessEnvironment {
     } else if (var instanceof IFunApp) {
       String fullStr = ((IFunApp) var).fun().toString();
       return fullStr.substring(0, fullStr.indexOf('/'));
+    } else if (var instanceof IIntFormula) {
+      return getName(((IIntFormula) var).t());
     }
 
     throw new IllegalArgumentException("The given parameter is no variable or function");

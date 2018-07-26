@@ -136,7 +136,12 @@ public class SolverTheoriesTest extends SolverBasedTest0 {
       throw new AssumptionViolatedException("Support for operation DIV is optional", e);
     }
     BooleanFormula fADiv3 = imgr.equal(imgr.divide(a, num3), num3);
-    BooleanFormula fAMod5 = imgr.equal(imgr.modulo(a, num5), num0);
+    BooleanFormula fAMod5;
+    try {
+      fAMod5 = imgr.equal(imgr.modulo(a, num5), num0);
+    } catch (UnsupportedOperationException e) {
+      throw new AssumptionViolatedException("Support for operation MOD is optional", e);
+    }
     BooleanFormula fAMod3 = imgr.equal(imgr.modulo(a, num3), num1);
 
     // check division-by-constant, a=10 && b=2 && a/5=b
@@ -210,7 +215,12 @@ public class SolverTheoriesTest extends SolverBasedTest0 {
     }
     BooleanFormula fADiv3 = imgr.equal(imgr.divide(a, num3), numNeg4);
     BooleanFormula fADivNeg3 = imgr.equal(imgr.divide(a, numNeg3), num4);
-    BooleanFormula fAMod5 = imgr.equal(imgr.modulo(a, num5), num0);
+    BooleanFormula fAMod5;
+    try {
+      fAMod5 = imgr.equal(imgr.modulo(a, num5), num0);
+    } catch (UnsupportedOperationException e) {
+      throw new AssumptionViolatedException("Support for operation MOD is optional", e);
+    }
     BooleanFormula fAMod3 = imgr.equal(imgr.modulo(a, num3), num2);
     BooleanFormula fAModNeg3 = imgr.equal(imgr.modulo(a, numNeg3), num2);
 
@@ -773,6 +783,158 @@ public class SolverTheoriesTest extends SolverBasedTest0 {
   }
 
   @Test
+  public void composedLinearMultiplication() throws SolverException, InterruptedException {
+    IntegerFormula i2 = imgr.makeNumber(2);
+    IntegerFormula i3 = imgr.makeNumber(3);
+    IntegerFormula i4 = imgr.makeNumber(4);
+    IntegerFormula x = imgr.makeVariable("x");
+
+    // MULT should be supported by all solvers, DIV/MOD are missing in Mathsat.
+    IntegerFormula mult = imgr.multiply(x, imgr.add(i2, imgr.add(i3, i4)));
+    IntegerFormula div;
+    IntegerFormula mod;
+    try {
+      div = imgr.divide(x, imgr.add(i2, imgr.add(i3, i4)));
+      mod = imgr.modulo(x, imgr.add(i2, imgr.add(i3, i4)));
+    } catch (UnsupportedOperationException e) {
+      // do nothing, this exception is fine here, because solvers do not need
+      // to support non-linear arithmetic, we can then skip the test completely
+      throw new AssumptionViolatedException("Support for non-linear arithmetic is optional", e);
+    }
+
+    try (ProverEnvironment env = context.newProverEnvironment()) {
+      env.push(imgr.greaterThan(mult, i4));
+      env.push(imgr.greaterThan(div, i4));
+      env.push(imgr.greaterThan(mod, i2));
+      assertThat(env).isSatisfiable();
+    }
+  }
+
+  @Test
+  public void multiplicationSquares() throws SolverException, InterruptedException {
+    IntegerFormula i2 = imgr.makeNumber(2);
+    IntegerFormula i3 = imgr.makeNumber(3);
+    IntegerFormula i4 = imgr.makeNumber(4);
+    IntegerFormula i5 = imgr.makeNumber(5);
+
+    IntegerFormula x = imgr.makeVariable("x");
+    IntegerFormula y = imgr.makeVariable("y");
+    IntegerFormula z = imgr.makeVariable("z");
+
+    IntegerFormula xx;
+    IntegerFormula yy;
+    IntegerFormula zz;
+    try {
+      xx = imgr.multiply(x, x);
+      yy = imgr.multiply(y, y);
+      zz = imgr.multiply(z, z);
+    } catch (UnsupportedOperationException e) {
+      // do nothing, this exception is fine here, because solvers do not need
+      // to support non-linear arithmetic, we can then skip the test completely
+      throw new AssumptionViolatedException("Support for non-linear arithmetic is optional", e);
+    }
+
+    try (ProverEnvironment env = context.newProverEnvironment()) {
+      // check x*x + y*y = z*z
+      env.push(imgr.equal(zz, imgr.add(xx, yy)));
+
+      {
+        // SAT with x=4 and y=3
+        env.push(imgr.equal(x, i3));
+        env.push(imgr.equal(y, i4));
+        assertThat(env).isSatisfiable();
+        env.pop();
+        env.pop();
+      }
+      { // SAT with z=5
+        env.push(imgr.equal(z, i5));
+        assertThat(env).isSatisfiable();
+        env.pop();
+      }
+      {
+        // UNSAT with z=5 and x=2
+        env.push(imgr.equal(z, i5));
+        env.push(imgr.equal(x, i2));
+        assertThat(env).isUnsatisfiable();
+        env.pop();
+        env.pop();
+      }
+      { // UNSAT with z=5 and x>3 and y>3
+        env.push(imgr.equal(z, i5));
+        env.push(imgr.greaterThan(x, i3));
+        env.push(imgr.greaterThan(y, i3));
+        assertThat(env).isUnsatisfiable();
+        env.pop();
+        env.pop();
+        env.pop();
+      }
+    }
+  }
+
+  @Test
+  public void multiplicationFactors() throws SolverException, InterruptedException {
+    IntegerFormula i37 = imgr.makeNumber(37);
+    IntegerFormula i1 = imgr.makeNumber(1);
+    IntegerFormula x = imgr.makeVariable("x");
+    IntegerFormula y = imgr.makeVariable("y");
+
+    IntegerFormula x_mult_y;
+    try {
+      x_mult_y = imgr.multiply(x, y);
+    } catch (UnsupportedOperationException e) {
+      // do nothing, this exception is fine here, because solvers do not need
+      // to support non-linear arithmetic, we can then skip the test completely
+      throw new AssumptionViolatedException("Support for non-linear arithmetic is optional", e);
+    }
+
+    try (ProverEnvironment env = context.newProverEnvironment()) {
+      env.push(imgr.equal(x_mult_y, i37));
+      assertThat(env).isSatisfiable();
+      env.push(imgr.greaterThan(x, i1));
+      env.push(imgr.greaterThan(y, i1));
+      assertThat(env).isUnsatisfiable();
+    }
+  }
+
+  @Test
+  public void multiplicationCubic() throws SolverException, InterruptedException {
+    IntegerFormula i125 = imgr.makeNumber(125);
+    IntegerFormula i27 = imgr.makeNumber(27);
+    IntegerFormula i5 = imgr.makeNumber(5);
+    IntegerFormula x = imgr.makeVariable("x");
+    IntegerFormula y = imgr.makeVariable("y");
+
+    IntegerFormula xxx;
+    IntegerFormula yyy;
+    try {
+      xxx = imgr.multiply(x, imgr.multiply(x, x));
+      yyy = imgr.multiply(y, imgr.multiply(y, y));
+    } catch (UnsupportedOperationException e) {
+      // do nothing, this exception is fine here, because solvers do not need
+      // to support non-linear arithmetic, we can then skip the test completely
+      throw new AssumptionViolatedException("Support for non-linear arithmetic is optional", e);
+    }
+
+    try (ProverEnvironment env = context.newProverEnvironment()) {
+      env.push(imgr.equal(xxx, i125));
+      env.push(imgr.equal(yyy, i27));
+      assertThat(env).isSatisfiable();
+      env.push(imgr.lessThan(x, i5));
+      assertThat(env).isUnsatisfiable();
+    }
+
+    try (ProverEnvironment env = context.newProverEnvironment()) {
+      env.push(imgr.equal(imgr.add(xxx, yyy), imgr.add(i27, i125)));
+      env.push(imgr.lessThan(y, i5));
+      env.push(imgr.equal(x, i5));
+      assertThat(env).isSatisfiable();
+      env.pop();
+      env.push(imgr.lessThan(x, i5));
+      assertThat(env).isUnsatisfiable();
+    }
+  }
+
+  @Test
   public void nonLinearDivision() throws SolverException, InterruptedException {
     IntegerFormula i2 = imgr.makeNumber(2);
     IntegerFormula i3 = imgr.makeNumber(3);
@@ -802,6 +964,32 @@ public class SolverTheoriesTest extends SolverBasedTest0 {
       env.push(z_equal_x_div_y);
       assertThat(env).isUnsatisfiable();
     }
+  }
+
+  @Test
+  public void integerDivisionRounding() throws SolverException, InterruptedException {
+    IntegerFormula varSeven = imgr.makeVariable("a");
+    IntegerFormula varEight = imgr.makeVariable("b");
+
+    IntegerFormula two = imgr.makeNumber(2);
+    IntegerFormula three = imgr.makeNumber(3);
+
+    // Test that 8/3 and 7/3 are rounded as expected for all combinations of positive/negative
+    // numbers
+    BooleanFormula f =
+        bmgr.and(
+            imgr.equal(varSeven, imgr.makeNumber(7)),
+            imgr.equal(varEight, imgr.makeNumber(8)),
+            imgr.equal(imgr.divide(varSeven, three), two),
+            imgr.equal(imgr.divide(imgr.negate(varSeven), three), imgr.negate(three)),
+            imgr.equal(imgr.divide(varSeven, imgr.negate(three)), imgr.negate(two)),
+            imgr.equal(imgr.divide(imgr.negate(varSeven), imgr.negate(three)), three),
+            imgr.equal(imgr.divide(varEight, three), two),
+            imgr.equal(imgr.divide(imgr.negate(varEight), three), imgr.negate(three)),
+            imgr.equal(imgr.divide(varEight, imgr.negate(three)), imgr.negate(two)),
+            imgr.equal(imgr.divide(imgr.negate(varEight), imgr.negate(three)), three));
+
+    assertThatFormula(f).isSatisfiable();
   }
 
   @Test

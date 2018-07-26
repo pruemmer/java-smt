@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e # exit with nonzero exit code if anything fails
 
+# DO NOT EDIT LOCALLY!
+# Keep this file synchronized with
+# https://gitlab.com/sosy-lab/software/java-project-template
+
 COVERAGE_FILE=junit/coverage.xml
 
 if ! [ -f "$COVERAGE_FILE" ] ; then
@@ -23,4 +27,4 @@ wget -O codacy-coverage-reporter-assembly-latest.jar "$CODACY_COVERAGE_REPORTER_
 # Show version
 java -cp codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter --help | head -n 1
 
-java -cp codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter -l Java -r "$COVERAGE_FILE"
+java -cp codacy-coverage-reporter-assembly-latest.jar com.codacy.CodacyCoverageReporter report -l Java -r "$COVERAGE_FILE"

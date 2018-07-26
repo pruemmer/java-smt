@@ -37,10 +37,11 @@ abstract class Mathsat5NumeralFormulaManager<
     extends AbstractNumeralFormulaManager<
         Long, Long, Long, ParamFormulaType, ResultFormulaType, Long> {
 
-  private final long mathsatEnv;
+  final long mathsatEnv;
 
-  Mathsat5NumeralFormulaManager(Mathsat5FormulaCreator pCreator) {
-    super(pCreator);
+  Mathsat5NumeralFormulaManager(
+      Mathsat5FormulaCreator pCreator, NonLinearArithmetic pNonLinearArithmetic) {
+    super(pCreator, pNonLinearArithmetic);
     this.mathsatEnv = pCreator.getEnv();
   }
 
@@ -92,11 +93,7 @@ abstract class Mathsat5NumeralFormulaManager<
 
   @Override
   public Long multiply(Long pNumber1, Long pNumber2) {
-    if (isNumeral(pNumber1) || isNumeral(pNumber2)) {
-      return msat_make_times(mathsatEnv, pNumber1, pNumber2);
-    } else {
-      return super.multiply(pNumber1, pNumber2);
-    }
+    return msat_make_times(mathsatEnv, pNumber1, pNumber2);
   }
 
   @Override
